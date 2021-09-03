@@ -1,26 +1,19 @@
-import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 
-const pulumiProject = pulumi.getProject();
 const cloudProjectId = gcp.config.project;
 const codebuildDockerImage = "gcr.io/cloud-builders/docker";
 
-interface BackendBuildDockerTriggerInputs {
+interface BuildDockerTriggerInputs {
   packageInfo: any;
 }
 
-export class BackendBuildDockerTrigger {
+export class BuildDockerTrigger {
   trigger: gcp.cloudbuild.Trigger;
   encodedImageName: string;
 
-  constructor({ packageInfo }: BackendBuildDockerTriggerInputs) {
+  constructor({ packageInfo }: BuildDockerTriggerInputs) {
     const packageName = packageInfo.name;
-    const packageVersion = packageInfo.version;
-    const serviceIdentifier = packageName.includes("vendure")
-      ? "vendure"
-      : "strapi";
-    const projectDir = `projects/${pulumiProject}/${serviceIdentifier}`;
-    this.encodedImageName = `eu.gcr.io/${cloudProjectId}/${serviceIdentifier}:v$_VER`;
+    this.encodedImageName = `eu.gcr.io/${cloudProjectId}/vendure:v$_VER`;
 
     const triggerName = `${cloudProjectId}-backend-docker-trigger`;
     this.trigger = new gcp.cloudbuild.Trigger(triggerName, {
@@ -41,14 +34,7 @@ export class BackendBuildDockerTrigger {
           {
             id: "Docker build",
             name: codebuildDockerImage,
-            args: [
-              "build",
-              "-t",
-              this.encodedImageName,
-              "-f",
-              `${projectDir}/Dockerfile`,
-              `./${projectDir}`,
-            ],
+            args: ["build", "-t", this.encodedImageName, `.`],
           },
           {
             id: "Docker push",

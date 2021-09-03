@@ -4,7 +4,7 @@ import * as gcp from "@pulumi/gcp";
 const projectName = pulumi.getProject();
 const accountName = `${projectName}-run-sa`;
 
-export class VendureServiceAccount {
+export class CloudRunServiceAccount {
   key: gcp.serviceaccount.Key;
   account: gcp.serviceaccount.Account;
 

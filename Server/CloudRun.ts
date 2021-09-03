@@ -6,7 +6,7 @@ import { Input, Output } from "@pulumi/pulumi";
 import { DatabaseEnvData } from "../lib/types";
 import { getRevisionTrafficAllocation } from "../lib/utils";
 
-interface VendureCloudRunInputs {
+interface CloudRunInputs {
   databaseInfo: DatabaseEnvData;
   vendureImageName: Output<string>;
   assetBucketName: Input<string>;
@@ -33,7 +33,7 @@ const DB_NAME = "postgres";
 const vendureServerDomain = `server${
   env == "prod" ? "" : `-${env}`
 }.${siteDomain}`;
-export class VendureCloudRun {
+export class CloudRun {
   vendureServer: gcp.cloudrun.Service;
 
   constructor({
@@ -43,7 +43,7 @@ export class VendureCloudRun {
     serviceAccountEmail,
     bucketsNetworking,
     maintainTrafficToRevision,
-  }: VendureCloudRunInputs) {
+  }: CloudRunInputs) {
     const googleTasksSecret = new random.RandomId(
       `${projectName}-${env}-tasks-secret`,
       {

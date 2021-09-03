@@ -3,7 +3,7 @@ import * as pulumi from "@pulumi/pulumi";
 
 const projectName = pulumi.getProject();
 
-export class VendureApiServices {
+export class ApiServices {
   services: gcp.projects.Service[];
 
   constructor() {
