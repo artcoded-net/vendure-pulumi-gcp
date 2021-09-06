@@ -8,7 +8,7 @@ import { getRevisionTrafficAllocation } from "../lib/utils";
 
 interface CloudRunInputs {
   databaseInfo: DatabaseEnvData;
-  vendureImageName: Output<string>;
+  vendureImageName: Output<string> | string;
   assetBucketName: Input<string>;
   serviceAccountEmail: Output<string>;
   bucketsNetworking?: BucketsNetworking;
@@ -152,11 +152,11 @@ export class CloudRun {
                 resources: {
                   limits: {
                     cpu: "2",
-                    memory: "2",
+                    memory: "2Gi",
                   },
                   requests: {
                     cpu: "2",
-                    memory: "2",
+                    memory: "2Gi",
                   },
                 },
                 envs: envVariables,
