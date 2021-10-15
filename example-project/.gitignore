@@ -1,0 +1,10 @@
+node_modules
+**/dist
+admin
+yarn-error.log
+**/vendure.sqlite
+static/initial-data/assets
+static/dev/assets
+static/dev/test-emails
+**/local/db-config-local.ts
+migrations

@@ -1,0 +1,24 @@
+{{> header title="Reimposta password dimenticata" }}
+
+<mj-section background-color="#fafafa">
+    <mj-column>
+        <mj-text color="#525252">
+            E' stata richiesta una nuova password per questo account.
+        </mj-text>
+
+        <mj-button font-family="Helvetica"
+                   background-color="#f45e43"
+                   color="white"
+                   href="{{ passwordResetUrl }}?token={{ passwordResetToken }}">
+            Reimposta password
+        </mj-button>
+
+        <mj-text color="#525252">
+        Se non hai fatto tu questa richiesta, puoi ignorare tranquillamente questa email: nulla viene modificato per il tuo account.
+        </mj-text>
+
+    </mj-column>
+</mj-section>
+
+
+{{> footer }}

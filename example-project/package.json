@@ -1,0 +1,70 @@
+{
+  "name": "@artcoded/vendure-pulumi-example",
+  "author": {
+    "name": "Artcoded",
+    "email": "dev@artcoded.net",
+    "url": "https://artcoded.net"
+  },
+  "description": "Sample Vendure implementation as an instance to be deployed to GCP via Pulumi IaC",
+  "private": true,
+  "version": "1.0.4",
+  "dependencies": {
+    "@artcoded/gcp-asset-server-plugin": "latest",
+    "@artcoded/job-queue-plugin": "latest",
+    "@artcoded/vendure-braintree-plugin": "latest",
+    "@artcoded/vendure-extended-shipments-plugin": "^0.2.9",
+    "@artcoded/vendure-featured-plugin": "latest",
+    "@artcoded/vendure-seo-plugin": "latest",
+    "@nestjs/typeorm": "^7.1.5",
+    "@vendure/admin-ui": "1.2.0",
+    "@vendure/admin-ui-plugin": "1.2.0",
+    "@vendure/asset-server-plugin": "1.2.0",
+    "@vendure/core": "1.2.0",
+    "@vendure/email-plugin": "1.2.0",
+    "@vendure/testing": "1.2.0",
+    "@vendure/ui-devkit": "1.2.0",
+    "better-sqlite3": "^7.1.5",
+    "pg": "^8.4.2",
+    "vendure-plugin-google-cloud-tasks": "^1.1.5"
+  },
+  "devDependencies": {
+    "@artcoded/vendure-pulumi": "1.0.1",
+    "@types/jest": "^26.0.14",
+    "@typescript-eslint/eslint-plugin": "^4.4.0",
+    "@typescript-eslint/parser": "^4.4.0",
+    "@vendure/create": "1.2.0",
+    "concurrently": "5.3.0",
+    "eslint": "^7.10.0",
+    "eslint-config-prettier": "^6.12.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "jest": "^26.5.2",
+    "prettier": "^2.1.2",
+    "ts-jest": "^26.4.1",
+    "typescript": "4.2.3"
+  },
+  "resolutions": {
+    "**/**/fs-capacitor": "^6.2.0",
+    "**/graphql-upload": "^11.0.0"
+  },
+  "scripts": {
+    "populate": "ts-node populate.ts",
+    "compile-admin-ui": "ts-node src/common/compile-admin-ui.ts",
+    "run:server": "node --max-old-space-size=1536 ./dist/prod/index.js",
+    "run:worker": "node --max-old-space-size=1536 ./dist/prod/index-worker.js",
+    "start": "concurrently yarn:run:*",
+    "dev:server": "ts-node ./src/dev/index.ts",
+    "dev:worker": "ts-node ./src/dev/index-worker.ts",
+    "dev": "concurrently yarn:dev:*",
+    "build:withAdmin": "rimraf dist && rimraf admin && tsc && yarn compile-admin-ui",
+    "build": "rimraf dist && tsc && cp -r static/email-templates ./dist",
+    "build:withMigrations": "rimraf dist && rimraf admin && tsc && tsc -p tsconfig.migrations.json && yarn compile-admin-ui",
+    "generate-types": "graphql-codegen --config ./codegen.json",
+    "migration:generate": "ts-node migration generate",
+    "migration:run": "ts-node migration run",
+    "migration:revert": "ts-node migration revert",
+    "lint:fix": "eslint ./src/**/*.ts --fix",
+    "link-packages": "yarn link @artcoded/vendure-pulumi @artcoded/vendure-braintree-plugin @artcoded/vendure-extended-shipments-plugin @artcoded/vendure-featured-plugin @artcoded/gcp-asset-server-plugin @artcoded/vendure-seo-plugin",
+    "unlink-packages": "yarn unlink @artcoded/vendure-pulumi @artcoded/vendure-braintree-plugin @artcoded/vendure-extended-shipments-plugin @artcoded/vendure-featured-plugin @artcoded/gcp-asset-server-plugin @artcoded/vendure-seo-plugin",
+    "push-admin": "gsutil -m rsync -r -c -d admin/dist gs://sampleshop-admin-bucket"
+  }
+}
