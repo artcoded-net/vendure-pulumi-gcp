@@ -1,6 +1,9 @@
 import * as gcp from "@pulumi/gcp";
+import * as pulumi from "@pulumi/pulumi";
 
-const cloudProjectId = gcp.config.project;
+const projectName = gcp.config.project;
+const stack = pulumi.getStack();
+const namingPrefix = `${projectName}-${stack}`;
 const codebuildDockerImage = "gcr.io/cloud-builders/docker";
 
 interface BuildDockerTriggerInputs {
@@ -15,9 +18,9 @@ export class BuildDockerTrigger {
 
   constructor({ packageInfo, repository, tagRegex }: BuildDockerTriggerInputs) {
     const packageName = packageInfo.name;
-    this.encodedImageName = `eu.gcr.io/${cloudProjectId}/vendure:$_VER`;
+    this.encodedImageName = `eu.gcr.io/${projectName}/vendure:$_VER`;
 
-    const triggerName = `${cloudProjectId}-backend-docker-trigger`;
+    const triggerName = `${namingPrefix}-backend-docker-trigger`;
     this.trigger = new gcp.cloudbuild.Trigger(triggerName, {
       name: triggerName,
       github: {
@@ -45,7 +48,7 @@ export class BuildDockerTrigger {
           },
         ],
         images: [this.encodedImageName],
-        // logsBucket: `gs://${cloudProjectId}/logs`,
+        // logsBucket: `gs://${projectName}/logs`,
         queueTtl: "20s",
         timeout: `${30 * 60}s`, // 30 minuti
       },

@@ -12,13 +12,15 @@ interface CloudRunInputs {
   assetBucketName: Input<string>;
   serviceAccountEmail: Output<string>;
   bucketsNetworking?: BucketsNetworking;
+  domainSuffix?: string;
   maintainTrafficToRevision?: string;
 }
 
 // const location = gcp.config.region || "eu-central1";
 const location = "europe-west1";
-const projectName = pulumi.getProject();
-const env = pulumi.getStack();
+const projectName = gcp.config.project;
+const stack = pulumi.getStack();
+const namingPrefix = `${projectName}-${stack}`;
 const config = new pulumi.Config();
 const siteName = config.require<string>("siteName");
 const shopEmail = config.require<string>("shopEmail");
@@ -26,13 +28,10 @@ const siteUrl = config.require<string>("siteUrl");
 const siteDomain = config.require<string>("siteDomain");
 const mailgunUser = config.require<string>("mailgunUser");
 const mailgunPassword = config.requireSecret<string>("mailgunPassword");
-const gcpProjectName = gcp.config.project;
 const SERVER_INTERNAL_PORT = 3000;
 // const WORKER_INTERNAL_PORT = 3020;
 const DB_NAME = "postgres";
-const vendureServerDomain = `server${
-  env == "prod" ? "" : `-${env}`
-}.${siteDomain}`;
+
 export class CloudRun {
   vendureServer: gcp.cloudrun.Service;
 
@@ -43,9 +42,14 @@ export class CloudRun {
     serviceAccountEmail,
     bucketsNetworking,
     maintainTrafficToRevision,
+    domainSuffix,
   }: CloudRunInputs) {
+    const vendureServerHostname = domainSuffix
+      ? `server-${domainSuffix}.${siteDomain}`
+      : `server.${siteDomain}`;
+
     const googleTasksSecret = new random.RandomId(
-      `${projectName}-${env}-tasks-secret`,
+      `${namingPrefix}-tasks-secret`,
       {
         byteLength: 10,
       }
@@ -55,7 +59,7 @@ export class CloudRun {
     const envVariables: pulumi.Input<
       pulumi.Input<gcp.types.input.cloudrun.ServiceTemplateSpecContainerEnv>[]
     > = [
-      { name: "ENV", value: env },
+      { name: "ENV", value: stack },
       { name: "DATABASE_NAME", value: DB_NAME },
       {
         name: "DATABASE_HOST",
@@ -79,9 +83,9 @@ export class CloudRun {
        * */
       {
         name: "VENDURE_ENDPOINT",
-        value: `https://${vendureServerDomain}`,
+        value: `https://${vendureServerHostname}`,
       },
-      { name: "GCP_PROJECT_ID", value: gcpProjectName },
+      { name: "GCP_PROJECT_ID", value: projectName },
       { name: "GCP_REGION", value: location },
       { name: "GOOGLE_TASKS_SECRET", value: googleTasksSecret },
       /**
@@ -109,15 +113,7 @@ export class CloudRun {
       },
     ];
 
-    const serverServiceName = `${projectName}-${env}-server`;
-    // const revisionSuffix = getRandomId({
-    //   name: `${projectName}-${env}-vendure-revision-suffix`,
-    //   forceRegeneration: true,
-    //   length: 8,
-    // });
-    // const newRevisionName = revisionSuffix.apply(
-    //   (suffix) => `${serverServiceName}-${suffix.toLowerCase()}`
-    // );
+    const serverServiceName = `${namingPrefix}-server`;
 
     /**
      * If providing an old stable revision, point 0 traffic to the new one (just for testing);
@@ -193,10 +189,10 @@ export class CloudRun {
     const domainMapping = new gcp.cloudrun.DomainMapping(
       `${projectName}-vendure-domain-mapping`,
       {
-        name: vendureServerDomain,
+        name: vendureServerHostname,
         location,
         metadata: {
-          namespace: gcpProjectName || projectName,
+          namespace: projectName || pulumi.getProject(),
         },
         spec: {
           routeName: this.vendureServer.name,

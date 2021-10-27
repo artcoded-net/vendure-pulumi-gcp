@@ -4,8 +4,9 @@ import { Input, Output } from "@pulumi/pulumi";
 import { getRandomId } from "../lib/random";
 import { DatabaseEnvData } from "../lib/types";
 
-const projectName = pulumi.getProject();
-const env = pulumi.getStack();
+const projectName = gcp.config.project;
+const stack = pulumi.getStack();
+const namingPrefix = `${projectName}-${stack}`;
 const config = new pulumi.Config();
 const dbPassword = config.requireSecret<string>("dbPassword");
 
@@ -15,7 +16,7 @@ interface DatabaseInputs {
 }
 
 const dbSuffix = getRandomId({
-  name: `${projectName}-${env}-db-suffix`,
+  name: `${namingPrefix}-db-suffix`,
   length: 9,
   forceRegeneration: false,
 });
@@ -27,8 +28,7 @@ export class Database {
     const { customInstanceName, sourceInstanceName } = inputs || {};
     this.instance = dbSuffix.apply((suffix) => {
       const instanceName =
-        customInstanceName ??
-        `${projectName}-${env}-db-${suffix.toLowerCase()}`;
+        customInstanceName ?? `${namingPrefix}-db-${suffix.toLowerCase()}`;
       return new gcp.sql.DatabaseInstance(instanceName, {
         name: instanceName,
         clone: sourceInstanceName ? { sourceInstanceName } : undefined,
@@ -68,7 +68,7 @@ export class Database {
     });
     const username = customInstanceName
       ? `${customInstanceName}-user`
-      : `${projectName}-${env}-db-user`;
+      : `${namingPrefix}-db-user`;
     this.user = new gcp.sql.User(username, {
       name: "postgres",
       instance: this.instance.name,

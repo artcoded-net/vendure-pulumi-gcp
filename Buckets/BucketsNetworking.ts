@@ -3,14 +3,15 @@ import * as gcp from "@pulumi/gcp";
 import { Input } from "@pulumi/pulumi";
 
 const config = new pulumi.Config();
-const env = pulumi.getStack();
-const envSuffix = env !== "prod" ? `-${env}` : "";
-const siteDomain = config.require<string>("siteDomain");
 const projectName = gcp.config.project;
+const stack = pulumi.getStack();
+const namingPrefix = `${projectName}-${stack}`;
+const siteDomain = config.require<string>("siteDomain");
 
 interface BucketsNetworkingInputs {
   assetsBackendId: Input<string>;
   adminBackendId: Input<string>;
+  domainSuffix?: string;
 }
 
 export class BucketsNetworking {
@@ -18,15 +19,23 @@ export class BucketsNetworking {
   adminHostName: string;
   assetsHostName: string;
 
-  constructor({ adminBackendId, assetsBackendId }: BucketsNetworkingInputs) {
-    this.adminHostName = `admin${envSuffix}.${siteDomain}`;
-    // const serverHostName = `server.${siteDomain}`;
-    this.assetsHostName = `assets${envSuffix}.${siteDomain}`;
+  constructor({
+    adminBackendId,
+    assetsBackendId,
+    domainSuffix,
+  }: BucketsNetworkingInputs) {
+    this.adminHostName = domainSuffix
+      ? `admin-${domainSuffix}.${siteDomain}`
+      : `admin.${siteDomain}`;
+    this.assetsHostName = domainSuffix
+      ? `assets-${domainSuffix}.${siteDomain}`
+      : `assets.${siteDomain}`;
     // Create managed SSL certificate
+    const certificateName = `${namingPrefix}-ssl-certificate`;
     const sslCertificate = new gcp.compute.ManagedSslCertificate(
-      `${projectName}${envSuffix}-ssl-certificate`,
+      certificateName,
       {
-        name: `${projectName}${envSuffix}-ssl-certificate`,
+        name: certificateName,
         description: "Vendure SSL certificate",
         managed: {
           domains: [this.adminHostName, this.assetsHostName],
@@ -34,58 +43,52 @@ export class BucketsNetworking {
       }
     );
     // Reserve a static IP
-    this.ipAddress = new gcp.compute.GlobalAddress(
-      `${projectName}${envSuffix}-ip`,
-      {
-        description: "Backend ip address",
-      }
-    );
+    this.ipAddress = new gcp.compute.GlobalAddress(`${namingPrefix}-ip`, {
+      description: "Backend ip address",
+    });
 
     const adminPathMatcherName = "admin";
     const assetsPathMatcherName = "assets";
     // The URL map
-    const urlMap = new gcp.compute.URLMap(
-      `${projectName}${envSuffix}-url-map`,
-      {
-        defaultService: adminBackendId,
-        hostRules: [
-          {
-            hosts: [this.adminHostName],
-            pathMatcher: adminPathMatcherName,
-          },
-          {
-            hosts: [this.assetsHostName],
-            pathMatcher: assetsPathMatcherName,
-          },
-        ],
-        pathMatchers: [
-          {
-            name: adminPathMatcherName,
-            defaultService: adminBackendId,
-            pathRules: [
-              {
-                paths: ["/*"],
-                service: adminBackendId,
-              },
-            ],
-          },
-          {
-            name: assetsPathMatcherName,
-            defaultService: assetsBackendId,
-            pathRules: [
-              {
-                paths: ["/*"],
-                service: assetsBackendId,
-              },
-            ],
-          },
-        ],
-      }
-    );
+    const urlMap = new gcp.compute.URLMap(`${namingPrefix}-url-map`, {
+      defaultService: adminBackendId,
+      hostRules: [
+        {
+          hosts: [this.adminHostName],
+          pathMatcher: adminPathMatcherName,
+        },
+        {
+          hosts: [this.assetsHostName],
+          pathMatcher: assetsPathMatcherName,
+        },
+      ],
+      pathMatchers: [
+        {
+          name: adminPathMatcherName,
+          defaultService: adminBackendId,
+          pathRules: [
+            {
+              paths: ["/*"],
+              service: adminBackendId,
+            },
+          ],
+        },
+        {
+          name: assetsPathMatcherName,
+          defaultService: assetsBackendId,
+          pathRules: [
+            {
+              paths: ["/*"],
+              service: assetsBackendId,
+            },
+          ],
+        },
+      ],
+    });
 
     // An https proxy
     const httpsProxy = new gcp.compute.TargetHttpsProxy(
-      `${projectName}${envSuffix}-https-proxy`,
+      `${namingPrefix}-https-proxy`,
       {
         urlMap: urlMap.id,
         sslCertificates: [sslCertificate.id],
@@ -94,12 +97,11 @@ export class BucketsNetworking {
 
     // Associate IP with the forwarding rule
     const forwardingRule = new gcp.compute.GlobalForwardingRule(
-      `${projectName}${envSuffix}-forwarding`,
+      `${namingPrefix}-forwarding`,
       {
         ipProtocol: "TCP",
         portRange: "443",
         ipAddress: this.ipAddress.address,
-        // networkTier: "PREMIUM",
         target: httpsProxy.id,
       }
     );
@@ -108,7 +110,7 @@ export class BucketsNetworking {
 
     const httpPathMatcherName = "http2https";
     const httpRedirectUrlMap = new gcp.compute.URLMap(
-      `${projectName}${envSuffix}-http-url-map`,
+      `${namingPrefix}-http-url-map`,
       {
         defaultUrlRedirect: {
           httpsRedirect: true,
@@ -147,7 +149,7 @@ export class BucketsNetworking {
 
     // An https proxy
     const httpProxy = new gcp.compute.TargetHttpProxy(
-      `${projectName}${envSuffix}-http-proxy`,
+      `${namingPrefix}-http-proxy`,
       {
         urlMap: httpRedirectUrlMap.id,
       }
@@ -155,7 +157,7 @@ export class BucketsNetworking {
 
     // Associate IP with the forwarding rule
     const httpRedirectForwardingRule = new gcp.compute.GlobalForwardingRule(
-      `${projectName}${envSuffix}-forwarding-http-redir`,
+      `${namingPrefix}-forwarding-http-redir`,
       {
         ipProtocol: "TCP",
         portRange: "80",

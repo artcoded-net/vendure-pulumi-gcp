@@ -1,10 +1,14 @@
 import * as gcp from "@pulumi/gcp";
+import * as pulumi from "@pulumi/pulumi";
 
-const bucketName = `${gcp.config.project}-admin-bucket`;
+const projectName = gcp.config.project;
+const stack = pulumi.getStack();
+const namingPrefix = `${projectName}-${stack}`;
+const bucketName = `${namingPrefix}-admin-bucket`;
 
 export class AdminBucket {
   bucket: gcp.storage.Bucket;
-  backend: gcp.compute.BackendBucket;
+  // backend: gcp.compute.BackendBucket;
 
   constructor() {
     this.bucket = new gcp.storage.Bucket(bucketName, {
@@ -25,10 +29,10 @@ export class AdminBucket {
       }
     );
 
-    this.backend = new gcp.compute.BackendBucket(`${bucketName}-backend`, {
-      description: "Admin bucket",
-      bucketName: this.bucket.name,
-      enableCdn: false,
-    });
+    // this.backend = new gcp.compute.BackendBucket(`${bucketName}-backend`, {
+    //   description: "Admin bucket",
+    //   bucketName: this.bucket.name,
+    //   enableCdn: false,
+    // });
   }
 }

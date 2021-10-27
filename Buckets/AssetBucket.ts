@@ -1,10 +1,14 @@
 import * as gcp from "@pulumi/gcp";
+import * as pulumi from "@pulumi/pulumi";
 
-const bucketName = `${gcp.config.project}-asset-bucket`;
+const projectName = gcp.config.project;
+const stack = pulumi.getStack();
+const namingPrefix = `${projectName}-${stack}`;
+const bucketName = `${namingPrefix}-asset-bucket`;
 
 export class AssetBucket {
   bucket: gcp.storage.Bucket;
-  backend: gcp.compute.BackendBucket;
+  // backend: gcp.compute.BackendBucket;
 
   constructor() {
     this.bucket = new gcp.storage.Bucket(bucketName, {
@@ -32,10 +36,10 @@ export class AssetBucket {
       }
     );
 
-    this.backend = new gcp.compute.BackendBucket(`${bucketName}-backend`, {
-      description: "Assets bucket",
-      bucketName: this.bucket.name,
-      enableCdn: true, // TODO: check costs effectiveness
-    });
+    // this.backend = new gcp.compute.BackendBucket(`${bucketName}-backend`, {
+    //   description: "Assets bucket",
+    //   bucketName: this.bucket.name,
+    //   enableCdn: true, // TODO: check costs effectiveness
+    // });
   }
 }

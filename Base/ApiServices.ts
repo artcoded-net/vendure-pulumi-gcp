@@ -1,7 +1,6 @@
 import * as gcp from "@pulumi/gcp";
-import * as pulumi from "@pulumi/pulumi";
 
-const projectName = pulumi.getProject();
+const projectName = gcp.config.project;
 
 export class ApiServices {
   services: gcp.projects.Service[];

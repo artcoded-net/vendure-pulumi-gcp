@@ -1,8 +1,10 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 
-const projectName = pulumi.getProject();
-const accountName = `${projectName}-run-sa`;
+const projectName = gcp.config.project;
+const stack = pulumi.getStack();
+const namingPrefix = `${projectName?.substr(0, 5)}-${stack}`;
+const accountName = `${namingPrefix}-run-sa`;
 
 export class CloudRunServiceAccount {
   key: gcp.serviceaccount.Key;
@@ -13,7 +15,7 @@ export class CloudRunServiceAccount {
       accountId: accountName,
       displayName: "Cloud Run Service Account",
     });
-    this.key = new gcp.serviceaccount.Key(`${projectName}-service-account`, {
+    this.key = new gcp.serviceaccount.Key(`${namingPrefix}-service-account`, {
       serviceAccountId: this.account.name,
       publicKeyType: "TYPE_X509_PEM_FILE",
     });
@@ -23,14 +25,14 @@ export class CloudRunServiceAccount {
     );
 
     const cloudrunStorageAdmin = new gcp.projects.IAMMember(
-      `${projectName}-cloudrun-storage-iam`,
+      `${namingPrefix}-cloudrun-storage-iam`,
       {
         member: serviceAccountMember,
         role: "roles/storage.admin",
       }
     );
     const cloudrunSqlClient = new gcp.projects.IAMMember(
-      `${projectName}-cloudrun-sql-iam`,
+      `${namingPrefix}-cloudrun-sql-iam`,
       {
         member: serviceAccountMember,
         role: "roles/cloudsql.client",
@@ -38,14 +40,14 @@ export class CloudRunServiceAccount {
     );
     // Allow to invoke other cloudrun services
     const cloudrunInvoker = new gcp.projects.IAMMember(
-      `${projectName}-cloudrun-run-invoker-iam`,
+      `${namingPrefix}-cloudrun-run-invoker-iam`,
       {
         member: serviceAccountMember,
         role: "roles/run.invoker",
       }
     );
     const cloudTasksAdmin = new gcp.projects.IAMMember(
-      `${projectName}-cloudrun-cloudtasks-iam`,
+      `${namingPrefix}-cloudrun-cloudtasks-iam`,
       {
         member: serviceAccountMember,
         role: "roles/cloudtasks.admin",
