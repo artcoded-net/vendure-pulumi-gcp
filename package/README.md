@@ -1,0 +1,2 @@
+- Command to push admin site:
+- gsutil -m rsync -r -c -d admin/dist gs://<bucket-name>

@@ -1,0 +1,3 @@
+name: vendure-pulumi
+runtime: nodejs
+description: Deployment for an example Vendure project using Pulumi and GCP (with Docker)

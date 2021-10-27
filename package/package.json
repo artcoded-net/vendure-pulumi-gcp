@@ -1,0 +1,13 @@
+{
+  "name": "@artcoded/vendure-pulumi",
+  "version": "1.0.1",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@pulumi/pulumi": "latest",
+    "@pulumi/gcp": "latest",
+    "@pulumi/random": "latest"
+  }
+}

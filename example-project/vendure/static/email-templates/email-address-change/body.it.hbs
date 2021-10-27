@@ -1,0 +1,20 @@
+{{> header title="Verifica il tuo nuovo indirizzo email" }}
+
+<mj-section background-color="#fafafa">
+    <mj-column>
+        <mj-text color="#525252">
+            Abbiamo ricevuto una richiesta di sostituzione del tuo indirizzo di registrazione con questo.
+            Clicca il pulsante in basso per confermare questo indirizzo e completare il processo:
+        </mj-text>
+
+        <mj-button font-family="Helvetica"
+                   background-color="#f45e43"
+                   color="white"
+                   href="{{ changeEmailAddressUrl }}?token={{ identifierChangeToken }}">
+            Verifica!
+        </mj-button>
+    </mj-column>
+</mj-section>
+
+
+{{> footer }}

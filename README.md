@@ -1,2 +1,5 @@
-- Command to push admin site:
-- gsutil -m rsync -r -c -d admin/dist gs://<bucket-name>
+# Vendure deployment to GCP using Docker and Pulumi
+
+Work in progress
+
+- Set sample initial data
