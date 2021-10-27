@@ -8,7 +8,8 @@ const codebuildDockerImage = "gcr.io/cloud-builders/docker";
 
 interface BuildDockerTriggerInputs {
   packageInfo: any;
-  repository: string;
+  githubRepository: string;
+  githubUser: string;
   tagRegex?: string;
 }
 
@@ -16,7 +17,12 @@ export class BuildDockerTrigger {
   trigger: gcp.cloudbuild.Trigger;
   encodedImageName: string;
 
-  constructor({ packageInfo, repository, tagRegex }: BuildDockerTriggerInputs) {
+  constructor({
+    packageInfo,
+    githubRepository,
+    githubUser,
+    tagRegex,
+  }: BuildDockerTriggerInputs) {
     const packageName = packageInfo.name;
     this.encodedImageName = `eu.gcr.io/${projectName}/vendure:$_VER`;
 
@@ -24,8 +30,8 @@ export class BuildDockerTrigger {
     this.trigger = new gcp.cloudbuild.Trigger(triggerName, {
       name: triggerName,
       github: {
-        owner: "artcoded-net",
-        name: repository, // this is NOT the name of the repo
+        owner: githubUser,
+        name: githubRepository, // this is NOT the name of the repo
         push: {
           // prettier-ignore
           tag: tagRegex?? `^${packageName}@([0-9.]+)$`,

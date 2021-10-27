@@ -4,15 +4,17 @@ import * as pulumi from "@pulumi/pulumi";
 const projectName = gcp.config.project;
 const stack = pulumi.getStack();
 const namingPrefix = `${projectName}-${stack}`;
-const bucketName = `${namingPrefix}-admin-bucket`;
+const DEFAULT_BUCKET_NAME = `${namingPrefix}-asset-bucket`;
 
 export class AdminBucket {
   bucket: gcp.storage.Bucket;
+  bucketName: string;
   // backend: gcp.compute.BackendBucket;
 
-  constructor() {
-    this.bucket = new gcp.storage.Bucket(bucketName, {
-      name: bucketName,
+  constructor(customBucketName?: string) {
+    this.bucketName = customBucketName ?? DEFAULT_BUCKET_NAME;
+    this.bucket = new gcp.storage.Bucket(this.bucketName, {
+      name: this.bucketName,
       website: {
         mainPageSuffix: "index.html",
         notFoundPage: "index.html",
@@ -21,7 +23,7 @@ export class AdminBucket {
     });
 
     const bucketIAMBinding = new gcp.storage.BucketIAMBinding(
-      `${bucketName}-IAMBinding`,
+      `${this.bucketName}-IAMBinding`,
       {
         bucket: this.bucket.name,
         role: "roles/storage.objectViewer",
@@ -29,7 +31,7 @@ export class AdminBucket {
       }
     );
 
-    // this.backend = new gcp.compute.BackendBucket(`${bucketName}-backend`, {
+    // this.backend = new gcp.compute.BackendBucket(`${this.bucketName}-backend`, {
     //   description: "Admin bucket",
     //   bucketName: this.bucket.name,
     //   enableCdn: false,
