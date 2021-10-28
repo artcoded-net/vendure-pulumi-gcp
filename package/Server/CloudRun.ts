@@ -11,7 +11,7 @@ interface CloudRunInputs {
   vendureImageName: Output<string> | string;
   assetBucketName: Input<string>;
   serviceAccountEmail: Output<string>;
-  bucketsNetworking?: BucketsNetworking;
+  assetsCdnHostname?: Input<string>;
   domainSuffix?: string;
   maintainTrafficToRevision?: string;
 }
@@ -40,7 +40,7 @@ export class CloudRun {
     databaseInfo,
     assetBucketName,
     serviceAccountEmail,
-    bucketsNetworking,
+    assetsCdnHostname,
     maintainTrafficToRevision,
     domainSuffix,
   }: CloudRunInputs) {
@@ -73,10 +73,6 @@ export class CloudRun {
       {
         name: "GCP_ASSET_BUCKET",
         value: assetBucketName,
-      },
-      {
-        name: "ASSETS_CDN_DOMAIN",
-        value: bucketsNetworking?.assetsHostName,
       },
       /**
        * For Google Cloud Tasks
@@ -112,6 +108,12 @@ export class CloudRun {
         value: mailgunPassword,
       },
     ];
+
+    if (assetsCdnHostname)
+      envVariables.push({
+        name: "ASSETS_CDN_DOMAIN",
+        value: assetsCdnHostname,
+      });
 
     const serverServiceName = `${namingPrefix}-server`;
 

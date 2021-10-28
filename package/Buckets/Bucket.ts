@@ -4,14 +4,24 @@ import * as pulumi from "@pulumi/pulumi";
 const projectName = gcp.config.project;
 const stack = pulumi.getStack();
 const namingPrefix = `${projectName}-${stack}`;
-const DEFAULT_BUCKET_NAME = `${namingPrefix}-asset-bucket`;
+const DEFAULT_BUCKET_NAME = `${namingPrefix}-bucket`;
 
-export class AssetBucket {
+interface BucketInputs {
+  customBucketName?: string;
+  configureBackend?: boolean;
+  configureWebsite?: boolean;
+}
+
+export class Bucket {
   bucket: gcp.storage.Bucket;
   bucketName: string;
-  // backend: gcp.compute.BackendBucket;
+  backend?: gcp.compute.BackendBucket;
 
-  constructor(customBucketName?: string) {
+  constructor({
+    customBucketName,
+    configureBackend,
+    configureWebsite,
+  }: BucketInputs) {
     this.bucketName = customBucketName ?? DEFAULT_BUCKET_NAME;
     this.bucket = new gcp.storage.Bucket(this.bucketName, {
       name: this.bucketName,
@@ -27,6 +37,12 @@ export class AssetBucket {
           ],
         },
       ],
+      website: configureWebsite
+        ? {
+            mainPageSuffix: "index.html",
+            notFoundPage: "index.html",
+          }
+        : undefined,
     });
 
     const bucketIAMBinding = new gcp.storage.BucketIAMBinding(
@@ -38,10 +54,12 @@ export class AssetBucket {
       }
     );
 
-    // this.backend = new gcp.compute.BackendBucket(`${this.bucketName}-backend`, {
-    //   description: "Assets bucket",
-    //   bucketName: this.bucket.name,
-    //   enableCdn: true, // TODO: check costs effectiveness
-    // });
+    this.backend = configureBackend
+      ? new gcp.compute.BackendBucket(`${this.bucketName}-backend`, {
+          description: "Assets bucket",
+          bucketName: this.bucket.name,
+          enableCdn: true, // TODO: check costs effectiveness
+        })
+      : undefined;
   }
 }
