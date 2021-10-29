@@ -13,22 +13,24 @@ const dbPassword = config.requireSecret<string>("dbPassword");
 interface DatabaseInputs {
   customInstanceName?: string;
   sourceInstanceName?: Input<string>;
+  customResourcePrefix?: string;
 }
-
-const dbSuffix = getRandomId({
-  name: `${namingPrefix}-db-suffix`,
-  length: 9,
-  forceRegeneration: false,
-});
 export class Database {
   instance: Output<gcp.sql.DatabaseInstance>;
   user: gcp.sql.User;
 
   constructor(inputs?: DatabaseInputs) {
-    const { customInstanceName, sourceInstanceName } = inputs || {};
+    const { customInstanceName, sourceInstanceName, customResourcePrefix } =
+      inputs || {};
+    const resourcePrefix = customResourcePrefix ?? namingPrefix;
+    const dbSuffix = getRandomId({
+      name: `${resourcePrefix}-db-suffix`,
+      length: 9,
+      forceRegeneration: false,
+    });
     this.instance = dbSuffix.apply((suffix) => {
       const instanceName =
-        customInstanceName ?? `${namingPrefix}-db-${suffix.toLowerCase()}`;
+        customInstanceName ?? `${resourcePrefix}-db-${suffix.toLowerCase()}`;
       return new gcp.sql.DatabaseInstance(instanceName, {
         name: instanceName,
         clone: sourceInstanceName ? { sourceInstanceName } : undefined,
@@ -68,7 +70,7 @@ export class Database {
     });
     const username = customInstanceName
       ? `${customInstanceName}-user`
-      : `${namingPrefix}-db-user`;
+      : `${resourcePrefix}-db-user`;
     this.user = new gcp.sql.User(username, {
       name: "postgres",
       instance: this.instance.name,

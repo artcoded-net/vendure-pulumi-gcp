@@ -11,6 +11,7 @@ interface BuildDockerTriggerInputs {
   githubRepository: string;
   githubUser: string;
   tagRegex?: string;
+  customResourcePrefix?: string;
 }
 
 export class BuildDockerTrigger {
@@ -22,11 +23,13 @@ export class BuildDockerTrigger {
     githubRepository,
     githubUser,
     tagRegex,
+    customResourcePrefix,
   }: BuildDockerTriggerInputs) {
+    const resourcePrefix = customResourcePrefix ?? namingPrefix;
     const packageName = packageInfo.name;
     this.encodedImageName = `eu.gcr.io/${projectName}/vendure:$_VER`;
 
-    const triggerName = `${namingPrefix}-backend-docker-trigger`;
+    const triggerName = `${resourcePrefix}-backend-docker-trigger`;
     this.trigger = new gcp.cloudbuild.Trigger(triggerName, {
       name: triggerName,
       github: {

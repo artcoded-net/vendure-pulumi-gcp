@@ -4,18 +4,22 @@ import * as gcp from "@pulumi/gcp";
 const projectName = gcp.config.project;
 const stack = pulumi.getStack();
 const namingPrefix = `${projectName?.substr(0, 5)}-${stack}`;
-const accountName = `${namingPrefix}-run-sa`;
 
+interface CloudRunServiceAccountInputs {
+  customResourcePrefix?: string;
+}
 export class CloudRunServiceAccount {
   key: gcp.serviceaccount.Key;
   account: gcp.serviceaccount.Account;
 
-  constructor() {
+  constructor({ customResourcePrefix }: CloudRunServiceAccountInputs) {
+    const resourcePrefix = customResourcePrefix ?? namingPrefix;
+    const accountName = `${resourcePrefix}-run-sa`;
     this.account = new gcp.serviceaccount.Account(accountName, {
       accountId: accountName,
       displayName: "Cloud Run Service Account",
     });
-    this.key = new gcp.serviceaccount.Key(`${namingPrefix}-service-account`, {
+    this.key = new gcp.serviceaccount.Key(`${resourcePrefix}-service-account`, {
       serviceAccountId: this.account.name,
       publicKeyType: "TYPE_X509_PEM_FILE",
     });
@@ -25,14 +29,14 @@ export class CloudRunServiceAccount {
     );
 
     const cloudrunStorageAdmin = new gcp.projects.IAMMember(
-      `${namingPrefix}-cloudrun-storage-iam`,
+      `${resourcePrefix}-cloudrun-storage-iam`,
       {
         member: serviceAccountMember,
         role: "roles/storage.admin",
       }
     );
     const cloudrunSqlClient = new gcp.projects.IAMMember(
-      `${namingPrefix}-cloudrun-sql-iam`,
+      `${resourcePrefix}-cloudrun-sql-iam`,
       {
         member: serviceAccountMember,
         role: "roles/cloudsql.client",
@@ -40,14 +44,14 @@ export class CloudRunServiceAccount {
     );
     // Allow to invoke other cloudrun services
     const cloudrunInvoker = new gcp.projects.IAMMember(
-      `${namingPrefix}-cloudrun-run-invoker-iam`,
+      `${resourcePrefix}-cloudrun-run-invoker-iam`,
       {
         member: serviceAccountMember,
         role: "roles/run.invoker",
       }
     );
     const cloudTasksAdmin = new gcp.projects.IAMMember(
-      `${namingPrefix}-cloudrun-cloudtasks-iam`,
+      `${resourcePrefix}-cloudrun-cloudtasks-iam`,
       {
         member: serviceAccountMember,
         role: "roles/cloudtasks.admin",

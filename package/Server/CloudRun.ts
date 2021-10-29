@@ -14,6 +14,7 @@ interface CloudRunInputs {
   assetsCdnHostname?: Input<string>;
   domainSuffix?: string;
   maintainTrafficToRevision?: string;
+  customResourcePrefix?: string;
 }
 
 // const location = gcp.config.region || "eu-central1";
@@ -43,13 +44,15 @@ export class CloudRun {
     assetsCdnHostname,
     maintainTrafficToRevision,
     domainSuffix,
+    customResourcePrefix,
   }: CloudRunInputs) {
+    const resourcePrefix = customResourcePrefix ?? namingPrefix;
     const vendureServerHostname = domainSuffix
       ? `server-${domainSuffix}.${siteDomain}`
       : `server.${siteDomain}`;
 
     const googleTasksSecret = new random.RandomId(
-      `${namingPrefix}-tasks-secret`,
+      `${resourcePrefix}-tasks-secret`,
       {
         byteLength: 10,
       }
@@ -115,7 +118,7 @@ export class CloudRun {
         value: assetsCdnHostname,
       });
 
-    const serverServiceName = `${namingPrefix}-server`;
+    const serverServiceName = `${resourcePrefix}-server`;
 
     /**
      * If providing an old stable revision, point 0 traffic to the new one (just for testing);
@@ -127,7 +130,7 @@ export class CloudRun {
     });
 
     this.vendureServer = new gcp.cloudrun.Service(
-      `${projectName}-vendure-server`,
+      `${resourcePrefix}-vendure-server`,
       {
         name: serverServiceName,
         location,
@@ -189,7 +192,7 @@ export class CloudRun {
     );
 
     const domainMapping = new gcp.cloudrun.DomainMapping(
-      `${projectName}-vendure-domain-mapping`,
+      `${resourcePrefix}-vendure-domain-mapping`,
       {
         name: vendureServerHostname,
         location,
