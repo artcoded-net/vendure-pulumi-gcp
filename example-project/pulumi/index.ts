@@ -1,6 +1,8 @@
 import * as pulumi from "@pulumi/pulumi";
+import * as gcp from "@pulumi/gcp";
 
-export = async () => {
-  const stack = pulumi.getStack();
-  return await import(`./${stack}`).then((module) => module.default());
-};
+// Create a GCP resource (Storage Bucket)
+const bucket = new gcp.storage.Bucket("my-bucket");
+
+// Export the DNS name of the bucket
+export const bucketName = bucket.url;
